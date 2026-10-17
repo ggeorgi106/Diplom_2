@@ -8,19 +8,28 @@ from helpers import generate_user_data
 class TestCreateUser:
 
     @allure.title('Создание уникального пользователя')
-    def test_create_unique_user_success(self):
+    def test_create_unique_user_success(self, user_cleanup):
         user_data = generate_user_data()
 
         response = UserApi.create_user(user_data)
+
+        if response.status_code == 200:
+            user_cleanup.append(user_data)
 
         assert response.status_code == 200
         assert response.json()['success'] is True
 
     @allure.title('Нельзя создать двух одинаковых пользователей')
-    def test_create_duplicate_user_error(self):
+    def test_create_duplicate_user_error(self, user_cleanup):
         user_data = generate_user_data()
 
-        UserApi.create_user(user_data)
+        first_response = UserApi.create_user(user_data)
+
+        if first_response.status_code == 200:
+            user_cleanup.append(user_data)
+
+        assert first_response.status_code == 200
+
         response = UserApi.create_user(user_data)
 
         assert response.status_code == 403

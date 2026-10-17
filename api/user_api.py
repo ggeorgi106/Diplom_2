@@ -25,3 +25,12 @@ class UserApi:
             headers['Authorization'] = token
 
         return requests.patch(USER_URL, json=data, headers=headers)
+
+    @staticmethod
+    @allure.step('Удалить пользователя')
+    def delete_user(token):
+        headers = {
+            'Authorization': token
+        }
+
+        return requests.delete(USER_URL, headers=headers)

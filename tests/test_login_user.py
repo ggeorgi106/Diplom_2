@@ -7,9 +7,15 @@ from helpers import generate_user_data
 class TestLoginUser:
 
     @allure.title('Авторизация существующего пользователя')
-    def test_login_existing_user_success(self):
+    def test_login_existing_user_success(self, user_cleanup):
         user_data = generate_user_data()
-        UserApi.create_user(user_data)
+
+        create_response = UserApi.create_user(user_data)
+
+        if create_response.status_code == 200:
+            user_cleanup.append(user_data)
+
+        assert create_response.status_code == 200
 
         login_data = {
             'email': user_data['email'],
