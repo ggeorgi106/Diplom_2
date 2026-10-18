@@ -20,15 +20,12 @@ class TestCreateUser:
         assert response.json()['success'] is True
 
     @allure.title('Нельзя создать двух одинаковых пользователей')
-    def test_create_duplicate_user_error(self, user_cleanup):
-        user_data = generate_user_data()
-
-        first_response = UserApi.create_user(user_data)
-
-        if first_response.status_code == 200:
-            user_cleanup.append(user_data)
-
-        assert first_response.status_code == 200
+    def test_create_duplicate_user_error(self, created_user):
+        user_data = {
+            'email': created_user['email'],
+            'password': created_user['password'],
+            'name': created_user['name']
+        }
 
         response = UserApi.create_user(user_data)
 
@@ -37,8 +34,13 @@ class TestCreateUser:
         assert response.json()['message'] == 'User already exists'
 
     @allure.title('Нельзя создать пользователя без обязательного поля')
-    @pytest.mark.parametrize('missing_field', ['email', 'password', 'name'])
-    def test_create_user_without_required_field_error(self, missing_field):
+    @pytest.mark.parametrize(
+        'missing_field',
+        ['email', 'password', 'name']
+    )
+    def test_create_user_without_required_field_error(
+        self, missing_field
+    ):
         user_data = generate_user_data()
         user_data.pop(missing_field)
 
@@ -46,5 +48,6 @@ class TestCreateUser:
 
         assert response.status_code == 403
         assert response.json()['success'] is False
-        assert response.json()['message'] == \
+        assert response.json()['message'] == (
             'Email, password and name are required fields'
+        )

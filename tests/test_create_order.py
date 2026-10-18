@@ -1,37 +1,41 @@
 import allure
+import pytest
 import requests
 
 from api.order_api import OrderApi
-from api.user_api import UserApi
-from helpers import generate_user_data
 from urls import INGREDIENTS_URL
+
+
+@pytest.fixture
+def order_ingredients():
+    response = requests.get(INGREDIENTS_URL)
+
+    if response.status_code != 200:
+        pytest.fail('Не удалось получить ингредиенты')
+
+    ingredients = response.json()['data']
+
+    if len(ingredients) < 2:
+        pytest.fail('Недостаточно ингредиентов для теста')
+
+    return {
+        'ingredients': [
+            ingredients[0]['_id'],
+            ingredients[1]['_id']
+        ]
+    }
 
 
 class TestCreateOrder:
 
     @allure.title('Создание заказа с авторизацией')
-    def test_create_order_authorized_user_success(self, user_cleanup):
-        user_data = generate_user_data()
-
-        create_response = UserApi.create_user(user_data)
-
-        assert create_response.status_code == 200
-
-        token = create_response.json()['accessToken']
-        user_cleanup.append({'token': token})
-
-        ingredients_response = requests.get(INGREDIENTS_URL)
-        ingredients = ingredients_response.json()['data']
-
-        order_data = {
-            'ingredients': [
-                ingredients[0]['_id'],
-                ingredients[1]['_id']
-            ]
-        }
+    def test_create_order_authorized_user_success(
+        self, created_user, order_ingredients
+    ):
+        token = created_user['token']
 
         response = OrderApi.create_order(
-            order_data,
+            order_ingredients,
             token
         )
 
@@ -40,18 +44,10 @@ class TestCreateOrder:
         assert 'order' in response.json()
 
     @allure.title('Создание заказа без авторизации')
-    def test_create_order_unauthorized_user_success(self):
-        ingredients_response = requests.get(INGREDIENTS_URL)
-        ingredients = ingredients_response.json()['data']
-
-        order_data = {
-            'ingredients': [
-                ingredients[0]['_id'],
-                ingredients[1]['_id']
-            ]
-        }
-
-        response = OrderApi.create_order(order_data)
+    def test_create_order_unauthorized_user_success(
+        self, order_ingredients
+    ):
+        response = OrderApi.create_order(order_ingredients)
 
         assert response.status_code == 200
         assert response.json()['success'] is True
@@ -67,7 +63,9 @@ class TestCreateOrder:
 
         assert response.status_code == 400
         assert response.json()['success'] is False
-        assert response.json()['message'] == 'Ingredient ids must be provided'
+        assert response.json()['message'] == (
+            'Ingredient ids must be provided'
+        )
 
     @allure.title('Нельзя создать заказ с неверным хешем ингредиента')
     def test_create_order_with_invalid_ingredient_hash_error(self):

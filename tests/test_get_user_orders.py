@@ -1,37 +1,15 @@
 import allure
-import requests
 
 from api.order_api import OrderApi
-from api.user_api import UserApi
-from helpers import generate_user_data
-from urls import INGREDIENTS_URL
 
 
 class TestGetUserOrders:
 
     @allure.title('Получение заказов авторизованного пользователя')
-    def test_get_orders_authorized_user_success(self, user_cleanup):
-        user_data = generate_user_data()
-
-        create_response = UserApi.create_user(user_data)
-
-        assert create_response.status_code == 200
-
-        token = create_response.json()['accessToken']
-        user_cleanup.append({'token': token})
-
-        ingredients_response = requests.get(INGREDIENTS_URL)
-        ingredients = ingredients_response.json()['data']
-
-        order_data = {
-            'ingredients': [
-                ingredients[0]['_id'],
-                ingredients[1]['_id']
-            ]
-        }
-
-        order_response = OrderApi.create_order(order_data, token)
-        assert order_response.status_code == 200
+    def test_get_orders_authorized_user_success(
+        self, created_user_with_order
+    ):
+        token = created_user_with_order['token']
 
         response = OrderApi.get_user_orders(token)
 

@@ -1,20 +1,14 @@
 import allure
 
 from api.user_api import UserApi
-from helpers import generate_user_data, generate_random_string
+from helpers import generate_random_string
 
 
 class TestUpdateUser:
 
     @allure.title('Изменение email авторизованного пользователя')
-    def test_update_email_authorized_user_success(self, user_cleanup):
-        user_data = generate_user_data()
-
-        create_response = UserApi.create_user(user_data)
-        assert create_response.status_code == 200
-
-        token = create_response.json()['accessToken']
-        user_cleanup.append({'token': token})
+    def test_update_email_authorized_user_success(self, created_user):
+        token = created_user['token']
 
         new_email = f'{generate_random_string(10)}@yandex.ru'
         update_data = {
@@ -28,14 +22,8 @@ class TestUpdateUser:
         assert response.json()['user']['email'] == new_email
 
     @allure.title('Изменение имени авторизованного пользователя')
-    def test_update_name_authorized_user_success(self, user_cleanup):
-        user_data = generate_user_data()
-
-        create_response = UserApi.create_user(user_data)
-        assert create_response.status_code == 200
-
-        token = create_response.json()['accessToken']
-        user_cleanup.append({'token': token})
+    def test_update_name_authorized_user_success(self, created_user):
+        token = created_user['token']
 
         new_name = generate_random_string(10)
         update_data = {
